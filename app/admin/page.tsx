@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowRight, BarChart3, Bell, CreditCard, LayoutDashboard, MessageSquare, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
+import { ArrowRight, BarChart3, Bell, CreditCard, LayoutDashboard, MessageSquare, PieChart, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
 
 const initialMenu = [
   { id: 1, name: 'Smoked Paneer Tikka', category: 'Starters', price: 320, status: 'Available', special: true },
@@ -116,7 +116,7 @@ export default function AdminPage() {
   const filteredOrders = useMemo(
     () => orders.filter(order =>
       (statusFilter === 'All' || order.status === statusFilter) &&
-      (customerTypeFilter === 'All' || customerTypeFilter === 'All' ? true : order.type === customerTypeFilter),
+      (customerTypeFilter === 'All' || order.type === customerTypeFilter),
     ),
     [statusFilter, customerTypeFilter, orders],
   )
@@ -129,6 +129,19 @@ export default function AdminPage() {
     const completed = orders.filter(order => order.status === 'Completed').length
     const revenue = orders.reduce((sum, order) => sum + order.total, 0)
     return { total, pending, completed, revenue }
+  }, [orders])
+
+  const paymentSummary = useMemo(() => {
+    const paidOrders = orders.filter(order => order.paymentStatus === 'Paid')
+    const pendingOrders = orders.filter(order => order.paymentStatus !== 'Paid')
+    const onlineOrders = orders.filter(order => ['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallet'].includes(order.paymentMethod))
+    return {
+      paidTotal: paidOrders.reduce((sum, order) => sum + order.total, 0),
+      pendingTotal: pendingOrders.reduce((sum, order) => sum + order.total, 0),
+      paidCount: paidOrders.length,
+      pendingCount: pendingOrders.length,
+      onlineCount: onlineOrders.length,
+    }
   }, [orders])
 
   const popularDishes = useMemo(() => {
@@ -555,7 +568,8 @@ export default function AdminPage() {
             <div className="menu-header">
               <div>
                 <span className="eyebrow">Custom billing</span>
-                <h2>Build invoices with discounts, GST, and service charges.</h2>
+                <h2>Build invoices with discounts, GST, and payment capture.</h2>
+                <p className="section-note">Use this billing panel to finalize guest orders, capture online settlement, and mark payments as complete.</p>
               </div>
             </div>
             <div className="admin-panel">
@@ -599,7 +613,8 @@ export default function AdminPage() {
             <div className="menu-header">
               <div>
                 <span className="eyebrow">Reports</span>
-                <h2>Sales trends and popular dishes.</h2>
+                <h2>Sales, payments, and billing performance.</h2>
+                <p className="section-note">Billing reports show paid vs pending totals, table turnover, and the online payment share for today's service.</p>
               </div>
             </div>
             <div className="report-grid">
@@ -609,19 +624,24 @@ export default function AdminPage() {
                 <strong>₹{metricValues.revenue}</strong>
               </div>
               <div className="feature-card">
-                <div className="feature-icon"><PieChart size={18} /></div>
-                <span>Popular dishes</span>
-                <strong>{popularDishes.join(', ')}</strong>
-              </div>
-              <div className="feature-card">
-                <div className="feature-icon"><Table2 size={18} /></div>
-                <span>Active tables</span>
-                <strong>{tablesOccupied}</strong>
+                <div className="feature-icon"><CreditCard size={18} /></div>
+                <span>Payments collected</span>
+                <strong>₹{paymentSummary.paidTotal}</strong>
               </div>
               <div className="feature-card">
                 <div className="feature-icon"><Bell size={18} /></div>
-                <span>Available tables</span>
-                <strong>{tablesAvailable}</strong>
+                <span>Pending payments</span>
+                <strong>₹{paymentSummary.pendingTotal}</strong>
+              </div>
+              <div className="feature-card">
+                <div className="feature-icon"><Table2 size={18} /></div>
+                <span>Online order count</span>
+                <strong>{paymentSummary.onlineCount}</strong>
+              </div>
+              <div className="feature-card">
+                <div className="feature-icon"><PieChart size={18} /></div>
+                <span>Popular dishes</span>
+                <strong>{popularDishes.join(', ')}</strong>
               </div>
             </div>
           </section>
@@ -631,8 +651,9 @@ export default function AdminPage() {
           <section className="menu-section">
             <div className="menu-header">
               <div>
-                <span className="eyebrow">Customer reviews</span>
-                <h2>Guest ratings and comments.</h2>
+                <span className="eyebrow">Customer feedback</span>
+                <h2>Guest ratings, table experience, and payment ease.</h2>
+                <p className="section-note">Track how guests respond to service, billing process, and table comfort after their meal.</p>
               </div>
             </div>
             <div className="feature-grid">

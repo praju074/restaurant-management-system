@@ -306,8 +306,10 @@ export default function Page() {
   const [cart, setCart] = useState(Array<{ id: number; quantity: number; instructions: string }>())
   const [favorites, setFavorites] = useState<number[]>([])
   const [specialInstructions, setSpecialInstructions] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState(paymentMethods[0])
   const [placedOrder, setPlacedOrder] = useState<{ orderId: string; statusIndex: number; eta: string; total: number; paymentMethod: string } | null>(null)
   const [recentOrders, setRecentOrders] = useState<Array<{ orderId: string; table: string; total: number; status: string }>>([])
+  const [onlinePaymentStatus, setOnlinePaymentStatus] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
 
   useEffect(() => {
@@ -405,11 +407,37 @@ export default function Page() {
       statusIndex: 0,
       eta: `${15 + cartEntries.length * 2} min`,
       total,
-      paymentMethod: paymentMethods[0],
+      paymentMethod,
     })
     setRecentOrders(current => [{ orderId, table: tableNumber, total, status: 'Order received' }, ...current].slice(0, 4))
     setCart([])
     setSpecialInstructions('')
+    setOnlinePaymentStatus(null)
+    setShowMenu(false)
+  }
+
+  const handlePayOnline = () => {
+    if (!tableNumber) {
+      window.alert('Please confirm your table number before paying.')
+      return
+    }
+    if (cartEntries.length === 0) {
+      window.alert('Add at least one dish to the cart first.')
+      return
+    }
+
+    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
+    setPlacedOrder({
+      orderId,
+      statusIndex: 0,
+      eta: `${12 + cartEntries.length * 2} min`,
+      total,
+      paymentMethod,
+    })
+    setRecentOrders(current => [{ orderId, table: tableNumber, total, status: 'Paid online' }, ...current].slice(0, 4))
+    setCart([])
+    setSpecialInstructions('')
+    setOnlinePaymentStatus(`Online payment completed with ${paymentMethod}.`)
     setShowMenu(false)
   }
 
@@ -468,30 +496,33 @@ export default function Page() {
 
           <div className="hero-media">
             <img className="hero-media-image" src="/images/restaurant-dining.png" alt="Restaurant dining experience" />
-            <div className="order-entry-card hero-entry-card">
-              <div className="order-entry-copy">
-                <span className="eyebrow">Table Entry</span>
-                <h2>{tableNumber ? `Table ${tableNumber} detected` : 'Scan a table QR to auto-detect.'}</h2>
-                <p>You can also correct the table number manually before placing your order.</p>
+          </div>
+        </section>
+
+        <section className="table-entry-section">
+          <div className="order-entry-card">
+            <div className="order-entry-copy">
+              <span className="eyebrow">Table Entry</span>
+              <h2>{tableNumber ? `Table ${tableNumber} detected` : 'Scan a table QR to auto-detect.'}</h2>
+              <p>You can also correct the table number manually before placing your order.</p>
+            </div>
+            <div className="order-entry-form">
+              <label>
+                <span>Table Number</span>
+                <input value={tableNumber} onChange={e => setTableNumber(e.target.value.toUpperCase())} placeholder="T01" />
+              </label>
+              <button type="button" className="primary-button" onClick={() => setShowMenu(true)}>
+                Confirm table
+              </button>
+            </div>
+            <div className="order-entry-notes">
+              <div>
+                <strong>Sample QR link</strong>
+                <span>https://your-restaurant.com?table=T08</span>
               </div>
-              <div className="order-entry-form">
-                <label>
-                  <span>Table Number</span>
-                  <input value={tableNumber} onChange={e => setTableNumber(e.target.value.toUpperCase())} placeholder="T01" />
-                </label>
-                <button type="button" className="primary-button" onClick={() => setShowMenu(true)}>
-                  Confirm table
-                </button>
-              </div>
-              <div className="order-entry-notes">
-                <div>
-                  <strong>Sample QR link</strong>
-                  <span>https://your-restaurant.com?table=T08</span>
-                </div>
-                <div>
-                  <strong>Need help?</strong>
-                  <span>Ask staff to refresh your table details.</span>
-                </div>
+              <div>
+                <strong>Need help?</strong>
+                <span>Ask staff to refresh your table details.</span>
               </div>
             </div>
           </div>
@@ -521,12 +552,13 @@ export default function Page() {
           </div>
         </section>
 
-        <section className={`menu-section ${showMenu ? 'menu-visible' : 'menu-hidden'}`} id="menu">
-          <div className="menu-header">
-            <div>
-              <span className="eyebrow">Digital menu</span>
-              <h2>Browse, filter, and add dishes to your order.</h2>
-            </div>
+        {showMenu ? (
+          <section className="menu-section menu-visible" id="menu">
+            <div className="menu-header">
+              <div>
+                <span className="eyebrow">Digital menu</span>
+                <h2>Browse, filter, and add dishes to your order.</h2>
+              </div>
             <div className="menu-actions">
               <input
                 type="search"
@@ -586,7 +618,23 @@ export default function Page() {
               </article>
             ))}
           </div>
-        </section>
+          </section>
+        ) : (
+          <section className="menu-section menu-hidden" id="menu">
+            <div className="menu-header">
+              <div>
+                <span className="eyebrow">Digital menu</span>
+                <h2>Ready to order when you are.</h2>
+                <p>Tap the button below to reveal the full menu and begin adding items to your cart.</p>
+              </div>
+              <div className="menu-actions">
+                <button type="button" className="primary-button" onClick={() => setShowMenu(true)}>
+                  Show menu <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="reserve-section" id="cart">
           <div className="reserve-copy">
@@ -645,9 +693,42 @@ export default function Page() {
                 </div>
                 <label>
                   <span>Payment method</span>
-                  <select value={paymentMethods[0]} disabled>{paymentMethods.map(method => <option key={method}>{method}</option>)}</select>
+                  <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                    {paymentMethods.map(method => (
+                      <option key={method} value={method}>{method}</option>
+                    ))}
+                  </select>
                 </label>
-                <button type="button" className="primary-button full" onClick={handlePlaceOrder}>Place order</button>
+                {paymentMethod === 'UPI' ? (
+                  <label>
+                    <span>UPI ID</span>
+                    <input type="text" value="veranda@upi" readOnly />
+                  </label>
+                ) : null}
+                <div className="payment-options-grid">
+                  <div className="payment-action-card">
+                    <div>
+                      <strong>Pay online now</strong>
+                      <p>Complete payment instantly and get a digital receipt.</p>
+                    </div>
+                    <button type="button" className="primary-button full" onClick={handlePayOnline}>Pay online</button>
+                  </div>
+                  <div className="payment-action-card">
+                    <div>
+                      <strong>Pay at table</strong>
+                      <p>Confirm the order now and settle with staff when your meal arrives.</p>
+                    </div>
+                    <button type="button" className="secondary-button full" onClick={handlePlaceOrder}>Pay later</button>
+                  </div>
+                </div>
+                {onlinePaymentStatus ? <div className="payment-status-banner">{onlinePaymentStatus}</div> : null}
+                <div className="payment-note">
+                  {paymentMethod === 'UPI' ? (
+                    <><strong>UPI payment selected.</strong> Use <span className="upi-id">veranda@upi</span> or ask staff to scan the QR code.</>
+                  ) : (
+                    <><strong>{paymentMethod}</strong> will be used for checkout.</>
+                  )}
+                </div>
               </>
             )}
           </div>
