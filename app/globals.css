@@ -2003,3 +2003,159 @@ button {
     font-size: 0.85rem !important;
   }
 }
+
+/* ------------------------------------------------------------------
+   Global responsive guards (all pages)
+   ------------------------------------------------------------------ */
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+@media (max-width: 860px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Grid children must be allowed to shrink below their content width,
+     otherwise horizontal scrollers inside them widen the whole page. */
+  .hero > *,
+  .admin-hero > *,
+  .about-grid > *,
+  .reserve-section > *,
+  .admin-panel > *,
+  .order-management-grid > *,
+  .feature-grid > *,
+  .menu-grid > *,
+  .specials-grid > *,
+  .table-grid > *,
+  .report-grid > * {
+    min-width: 0;
+  }
+
+  .hero-copy,
+  .hero-media,
+  .admin-hero-copy,
+  .admin-hero-media {
+    max-width: 100%;
+  }
+
+  .hero-stat-grid,
+  .category-tabs,
+  .admin-tabs-scroll,
+  .status-tabs {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  /* Long identifiers, emails and transaction ids should wrap, not overflow */
+  h1,
+  h2,
+  h3,
+  h4,
+  p,
+  strong,
+  small,
+  a,
+  li,
+  td,
+  th {
+    overflow-wrap: break-word;
+  }
+
+  /* Pills inside horizontal scrollers keep their natural width */
+  .category-tabs > *,
+  .admin-tabs-scroll > *,
+  .hero-stat-grid > * {
+    flex: 0 0 auto;
+  }
+
+  .category-tabs > * {
+    white-space: nowrap;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+    font-size: 16px; /* prevents iOS Safari zoom-on-focus */
+  }
+
+  /* Any wide data table scrolls inside its own card */
+  table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 640px) {
+  .billing-discount-row {
+    flex-wrap: wrap;
+  }
+
+  .billing-discount-row label,
+  .billing-discount-row .secondary-button {
+    width: 100% !important;
+    justify-content: space-between;
+  }
+
+  .billing-row {
+    grid-template-columns: 1fr auto !important;
+  }
+
+  .billing-row input:first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Metric cards: two per row and label above value */
+  .admin-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .admin-metrics-grid .feature-card {
+    gap: 10px;
+    padding: 14px !important;
+  }
+
+  /* Stat cards: "label / value" pairs stack instead of running together */
+  .feature-card span:has(+ strong),
+  .admin-metrics-grid .feature-card span {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--muted-foreground);
+  }
+
+  .feature-card span:has(+ strong) + strong,
+  .admin-metrics-grid .feature-card strong {
+    display: block;
+    font-size: 1.35rem;
+    line-height: 1.2;
+    margin-top: 2px;
+  }
+
+  .report-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .report-grid .feature-card {
+    padding: 14px !important;
+  }
+
+  /* Text-heavy stat cards get the full row */
+  .report-grid .feature-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .report-grid .feature-card:last-child strong {
+    font-size: 1rem;
+  }
+}
