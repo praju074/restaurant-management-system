@@ -768,7 +768,7 @@ export default function AdminPage() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+                <div className="billing-discount-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
                   <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600 }}>
                     <span>Discount (%)</span>
                     <input type="number" style={{ width: '80px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)' }} min={0} max={100} value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))} />
