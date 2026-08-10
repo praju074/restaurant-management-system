@@ -310,7 +310,7 @@ export default function Page() {
   const [placedOrder, setPlacedOrder] = useState<{ orderId: string; statusIndex: number; eta: string; total: number; paymentMethod: string } | null>(null)
   const [recentOrders, setRecentOrders] = useState<Array<{ orderId: string; table: string; total: number; status: string }>>([])
   const [onlinePaymentStatus, setOnlinePaymentStatus] = useState<string | null>(null)
-  const [showMenu, setShowMenu] = useState(false)
+  const [showMenu, setShowMenu] = useState(true)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -360,6 +360,8 @@ export default function Page() {
     const item = menuItems.find(menu => menu.id === entry.id)!
     return { ...item, quantity: entry.quantity, instructions: entry.instructions }
   })
+
+  const cartCounts = useMemo(() => Object.fromEntries(cart.map(entry => [entry.id, entry.quantity])), [cart])
 
   const subtotal = cartEntries.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const gst = Math.round(subtotal * 0.05)
@@ -607,13 +609,14 @@ export default function Page() {
                     <span>{item.time}</span>
                   </div>
                   <div className="menu-card-actions">
-                    <button type="button" className="secondary-button" onClick={() => toggleFavorite(item.id)}>
-                      <Heart size={16} /> {favorites.includes(item.id) ? 'Favorited' : 'Favorite'}
+                    <button type="button" className={`secondary-button favorite-button ${favorites.includes(item.id) ? 'favorited' : ''}`} onClick={() => toggleFavorite(item.id)}>
+                      <Heart className="heart-icon" size={16} /> {favorites.includes(item.id) ? 'Favorited' : 'Favorite'}
                     </button>
                     <button type="button" className="primary-button" disabled={!item.available} onClick={() => addToCart(item.id)}>
                       Add to cart
                     </button>
                   </div>
+                  {cartCounts[item.id] ? <div className="cart-quantity-pill">Qty {cartCounts[item.id]}</div> : null}
                 </div>
               </article>
             ))}
@@ -699,28 +702,28 @@ export default function Page() {
                     ))}
                   </select>
                 </label>
-                {paymentMethod === 'UPI' ? (
-                  <label>
-                    <span>UPI ID</span>
-                    <input type="text" value="veranda@upi" readOnly />
-                  </label>
-                ) : null}
-                <div className="payment-options-grid">
-                  <div className="payment-action-card">
-                    <div>
-                      <strong>Pay online now</strong>
-                      <p>Complete payment instantly and get a digital receipt.</p>
-                    </div>
-                    <button type="button" className="primary-button full" onClick={handlePayOnline}>Pay online</button>
-                  </div>
-                  <div className="payment-action-card">
-                    <div>
-                      <strong>Pay at table</strong>
-                      <p>Confirm the order now and settle with staff when your meal arrives.</p>
-                    </div>
-                    <button type="button" className="secondary-button full" onClick={handlePlaceOrder}>Pay later</button>
-                  </div>
+                <div className="payment-action-row">
+                  <button type="button" className="primary-button full" onClick={handlePayOnline}>Pay online</button>
+                  <button type="button" className="secondary-button full" onClick={handlePlaceOrder}>Place order</button>
                 </div>
+                {paymentMethod === 'UPI' ? (
+                  <div className="upi-section">
+                    <label>
+                      <span>UPI ID</span>
+                      <input type="text" value="veranda@upi" readOnly />
+                    </label>
+                    <div className="upi-qr-panel">
+                      <div className="upi-qr-box">
+                        <span>QR</span>
+                      </div>
+                      <div>
+                        <strong>Scan to pay</strong>
+                        <p>Use any UPI app and scan this code to send money instantly.</p>
+                        <p className="upi-id">veranda@upi</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
                 {onlinePaymentStatus ? <div className="payment-status-banner">{onlinePaymentStatus}</div> : null}
                 <div className="payment-note">
                   {paymentMethod === 'UPI' ? (
