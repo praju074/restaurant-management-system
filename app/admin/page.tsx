@@ -220,7 +220,7 @@ export default function AdminPage() {
   const handleAddTable = () => {
     if (!newTable.trim()) return
     setTables(current => [...current, { id: newTable.toUpperCase(), status: 'Available' }])
-    setNewTable(`T${current.length + 16}`)
+    setNewTable(`T${tables.length + 16}`)
   }
 
   const toggleTableStatus = (id: string) => {

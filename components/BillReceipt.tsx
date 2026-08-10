@@ -1,4 +1,3 @@
-```tsx
 'use client'
 
 import type { Bill } from '@/lib/billing'
@@ -193,4 +192,3 @@ export default function BillReceipt({
     </div>
   )
 }
-```

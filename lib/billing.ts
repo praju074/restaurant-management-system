@@ -1,4 +1,3 @@
-```tsx
 export const ORDERS_STORAGE_KEY = 'veranda_orders'
 export const BILLS_STORAGE_KEY = 'veranda_bills'
 
@@ -223,7 +222,6 @@ function parseLegacyItems(items?: string): BillLineItem[] {
     .map((part, index) => {
       const cleanPart = part.trim()
 
-      // FIXED REGEX
       const match = cleanPart.match(/^(.*)\s×(\d+)$/)
 
       const name = match
@@ -643,4 +641,3 @@ export function persistOrderAndBill(
 
   return linkedOrder
 }
-```
