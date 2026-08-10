@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { ArrowRight, BarChart3, Bell, CreditCard, LayoutDashboard, MessageSquare, PieChart, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
 
 const initialMenu = [
@@ -161,6 +161,32 @@ export default function AdminPage() {
   const updateOrder = (id: string, patch: Partial<typeof initialOrders[number]>) => {
     setOrders(current => current.map(order => order.id === id ? { ...order, ...patch } : order))
   }
+
+  // Load orders from localStorage (if admin reloads or another tab updated them)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = window.localStorage.getItem('veranda_orders')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setOrders(parsed)
+        }
+      } catch (e) {
+        // ignore parse errors
+      }
+    }
+  }, [])
+
+  // Persist orders to localStorage so customer pages can read status updates
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem('veranda_orders', JSON.stringify(orders))
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [orders])
 
   const advanceOrder = (id: string) => {
     setOrders(current => current.map(order => {

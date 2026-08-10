@@ -346,6 +346,45 @@ export default function Page() {
     return () => window.clearTimeout(timer)
   }, [placedOrder])
 
+  // Populate recent orders from shared storage on mount
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const stored = window.localStorage.getItem('veranda_orders')
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          setRecentOrders(parsed.slice(0, 4).map((o: any) => ({ orderId: o.id, table: o.table, total: o.total, status: o.status })))
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [])
+
+  // Listen for cross-tab storage updates so customers see kitchen status changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'veranda_orders') return
+      try {
+        const orders = JSON.parse(e.newValue || '[]')
+        if (!Array.isArray(orders)) return
+        if (!placedOrder) return
+        const mine = orders.find((o: any) => o.id === placedOrder.orderId)
+        if (mine) {
+          const idx = orderTimeline.indexOf(mine.status)
+          if (idx !== -1) setPlacedOrder(current => current ? { ...current, statusIndex: idx } : current)
+          setRecentOrders(current => [{ orderId: mine.id, table: mine.table, total: mine.total, status: mine.status }, ...current.filter(c => c.orderId !== mine.id)].slice(0, 4))
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [placedOrder])
+
   const filteredMenu = useMemo(() => {
     return menuItems
       .filter(item => (category === 'All dishes' || item.category === category) && item.name.toLowerCase().includes(query.toLowerCase()))
@@ -416,6 +455,16 @@ export default function Page() {
     setSpecialInstructions('')
     setOnlinePaymentStatus(null)
     setShowMenu(false)
+    // persist a lightweight order record so admin/kitchen views can pick it up
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('veranda_orders') || '[]')
+        stored.unshift({ id: orderId, table: tableNumber, total, status: 'Order received', paymentMethod, paymentStatus: 'Pending', prepTime: `${15 + cartEntries.length * 2} min` })
+        window.localStorage.setItem('veranda_orders', JSON.stringify(stored.slice(0, 50)))
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   const handlePayOnline = () => {
@@ -441,6 +490,16 @@ export default function Page() {
     setSpecialInstructions('')
     setOnlinePaymentStatus(`Online payment completed with ${paymentMethod}.`)
     setShowMenu(false)
+    // persist order with payment status so admin/kitchen can see it
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = JSON.parse(window.localStorage.getItem('veranda_orders') || '[]')
+        stored.unshift({ id: orderId, table: tableNumber, total, status: 'Order received', paymentMethod, paymentStatus: 'Paid', prepTime: `${12 + cartEntries.length * 2} min` })
+        window.localStorage.setItem('veranda_orders', JSON.stringify(stored.slice(0, 50)))
+      } catch (e) {
+        // ignore
+      }
+    }
   }
 
   const printReceipt = () => {
