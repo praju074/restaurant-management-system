@@ -1,47 +1,76 @@
-export default function Page() {
-  return (
-    <main
-      style={{
-        colorScheme: 'light dark',
-        position: 'relative',
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'light-dark(#fff, #000)',
-        color: 'light-dark(#000, #fff)',
-      }}
-    >
-      <svg
-        aria-hidden="true"
-        style={{ width: 80, height: 80 }}
-        width={80}
-        height={80}
-        fill="none"
-        viewBox="0 0 20 20"
-        xmlns="http://www.w3.org/2000/svg"
-        stroke="currentColor"
-        strokeWidth="0.5"
-      >
-        <path
-          d="M14.2 14.2H17V6.9375C17 4.76288 15.2371 3 13.0625 3H5.8V5.8M14.2 14.2V7.79063L7.79062 14.2H14.2ZM14.2 14.2V17H6.9375C4.76288 17 3 15.2371 3 13.0625V5.8H5.8M5.8 5.8V12.2313L12.2313 5.8H5.8Z"
-          strokeLinejoin="round"
-        />
-      </svg>
-      <p
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: 'calc(50% + 56px)',
-          transform: 'translateX(-50%)',
-          whiteSpace: 'nowrap',
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'light-dark(#71717a, #a1a1aa)',
-        }}
-      >
-        Your v0 generation will show here.
-      </p>
-    </main>
-  )
+'use client'
+
+import { useMemo, useState } from 'react'
+import {
+  ArrowRight, BarChart3, Bell, Check, ChevronDown, Clock3, Compass, CreditCard,
+  Flame, Heart, LayoutDashboard, Leaf, Menu, Minus, Moon, MoreHorizontal,
+  PackageCheck, Plus, QrCode, ReceiptText, Search, Settings2, ShoppingBag,
+  Sparkles, Sun, Table2, TrendingUp, Utensils, WalletCards, X, Zap,
+} from 'lucide-react'
+
+const menuItems = [
+  { id: 1, name: 'Smoked Paneer Tikka', category: 'Small plates', price: 320, rating: 4.9, time: '18 min', veg: true, image: '/images/paneer-tikka.png', description: 'Charred cottage cheese, bell peppers, mint chutney', tag: "Chef's pick", popular: true },
+  { id: 2, name: 'Saffron Garden Biryani', category: 'Mains', price: 460, rating: 4.8, time: '24 min', veg: true, image: '/images/biryani.png', description: 'Fragrant basmati, seasonal vegetables, raita', tag: "Today's special", popular: true },
+  { id: 3, name: 'Rose Cardamom Gulab Jamun', category: 'Desserts', price: 180, rating: 4.7, time: '8 min', veg: true, image: '/images/gulab-jamun.png', description: 'Warm khoya dumplings, rose syrup, pistachio', tag: 'Sweet finish', popular: false },
+  { id: 4, name: 'Crispy Lotus Stem', category: 'Small plates', price: 280, rating: 4.6, time: '15 min', veg: true, image: '/images/paneer-tikka.png', description: 'Honey chilli glaze, sesame, spring onion', tag: 'New', popular: false },
+]
+const categories = ['All dishes', 'Small plates', 'Mains', 'Desserts', 'Drinks']
+const orders = [
+  { id: '#ORD-2847', table: 'T12', customer: 'Walk-in guest', items: '2 × Paneer Tikka, 1 × Biryani', total: 1100, status: 'Preparing', age: '04:32' },
+  { id: '#ORD-2846', table: 'T04', customer: 'Aarav Mehta', items: '1 × Saffron Biryani, 2 × Gulab Jamun', total: 820, status: 'Ready to serve', age: '12:08' },
+  { id: '#ORD-2845', table: 'T18', customer: 'Walk-in guest', items: '3 × Lotus Stem', total: 840, status: 'Received', age: '00:56' },
+]
+
+function Logo({ small = false }: { small?: boolean }) {
+  return <div className="brand-lockup"><div className={small ? 'brand-mark small' : 'brand-mark'}><Utensils size={small ? 14 : 17} /></div><div><div className="brand-name">VERANDA</div>{!small && <div className="brand-sub">KITCHEN & BAR</div>}</div></div>
 }
+
+function StatusPill({ status }: { status: string }) {
+  const cls = status.toLowerCase().replaceAll(' ', '-')
+  return <span className={`status-pill ${cls}`}><span className="status-dot" />{status}</span>
+}
+
+export default function Page() {
+  const [view, setView] = useState<'guest' | 'admin'>('guest')
+  const [category, setCategory] = useState('All dishes')
+  const [query, setQuery] = useState('')
+  const [cart, setCart] = useState<Record<number, number>>({ 1: 1, 2: 1 })
+  const [favorites, setFavorites] = useState<number[]>([2])
+  const [showCart, setShowCart] = useState(false)
+  const [dark, setDark] = useState(false)
+  const [placed, setPlaced] = useState(false)
+  const [activeNav, setActiveNav] = useState('Overview')
+
+  const filtered = useMemo(() => menuItems.filter(item => (category === 'All dishes' || item.category === category) && item.name.toLowerCase().includes(query.toLowerCase())), [category, query])
+  const cartItems = menuItems.filter(item => cart[item.id])
+  const subtotal = cartItems.reduce((sum, item) => sum + item.price * cart[item.id], 0)
+  const gst = Math.round(subtotal * .05)
+  const total = subtotal + gst
+  const add = (id: number) => setCart(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
+  const decrease = (id: number) => setCart(prev => { const next = { ...prev }; if ((next[id] || 0) <= 1) delete next[id]; else next[id]--; return next })
+
+  return <div className={dark ? 'app-shell dark-mode' : 'app-shell'}>
+    <header className="topbar">
+      <Logo />
+      <div className="topbar-center"><span className="live-dot" /> Live service <span className="topbar-divider" /> Table <b>T12</b> <ChevronDown size={14} /></div>
+      <div className="topbar-actions"><button className="icon-button" aria-label="Toggle theme" onClick={() => setDark(!dark)}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button><button className="cart-button" onClick={() => setShowCart(true)}><ShoppingBag size={17} /> <span>{Object.values(cart).reduce((a, b) => a + b, 0)}</span></button><button className="avatar">AM</button></div>
+    </header>
+    <div className="mode-switch"><button className={view === 'guest' ? 'active' : ''} onClick={() => setView('guest')}><Compass size={15} /> Guest experience</button><button className={view === 'admin' ? 'active' : ''} onClick={() => setView('admin')}><LayoutDashboard size={15} /> Operations console</button></div>
+
+    {view === 'guest' ? <main className="guest-main">
+      <section className="welcome-row"><div><div className="eyebrow"><span className="eyebrow-line" /> Welcome to Veranda</div><h1>Good food, <em>better</em><br />memories.</h1><p className="hero-copy">A contemporary Indian kitchen rooted in the warmth of home,<br className="desktop-only" /> served fresh to your table.</p><div className="hero-actions"><button className="primary-button" onClick={() => document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })}>Start ordering <ArrowRight size={17} /></button><button className="text-button"><QrCode size={17} /> T12 <ChevronDown size={14} /></button></div></div><div className="hero-note"><Sparkles size={17} /><div><b>Tonight's table note</b><p>Your table is ready. Enjoy a complimentary welcome drink.</p></div></div></section>
+      <section className="special-strip"><div className="special-icon"><Flame size={20} /></div><div><div className="eyebrow small">Today's table</div><h3>The chef's seasonal edit</h3></div><p>Three plates designed for sharing, pairing and lingering over.</p><button className="round-arrow"><ArrowRight size={17} /></button></section>
+      <section id="menu" className="menu-section"><div className="section-heading"><div><div className="eyebrow"><span className="eyebrow-line" /> From the kitchen</div><h2>Make yourself at home.</h2></div><div className="search-wrap"><Search size={17} /><input aria-label="Search menu" placeholder="Search the menu" value={query} onChange={e => setQuery(e.target.value)} /></div></div><div className="menu-toolbar"><div className="category-tabs">{categories.map(item => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item}</button>)}</div><button className="filter-button">Popular first <ChevronDown size={14} /></button></div><div className="food-grid">{filtered.map(item => <article className="food-card" key={item.id}><div className="food-image-wrap"><img src={item.image} alt={item.name} /><span className="food-tag">{item.tag}</span><button className={`favorite ${favorites.includes(item.id) ? 'is-favorite' : ''}`} onClick={() => setFavorites(favorites.includes(item.id) ? favorites.filter(x => x !== item.id) : [...favorites, item.id])}><Heart size={17} fill={favorites.includes(item.id) ? 'currentColor' : 'none'} /></button></div><div className="food-copy"><div className="food-meta"><span className={item.veg ? 'veg-dot' : 'nonveg-dot'} />{item.veg ? 'Vegetarian' : 'Non-vegetarian'} <span>·</span> {item.time}</div><h3>{item.name}</h3><p>{item.description}</p><div className="food-bottom"><div><strong>₹{item.price}</strong><span className="rating"><span>★</span> {item.rating}</span></div>{cart[item.id] ? <div className="quantity-control"><button onClick={() => decrease(item.id)}><Minus size={14} /></button><b>{cart[item.id]}</b><button onClick={() => add(item.id)}><Plus size={14} /></button></div> : <button className="add-button" onClick={() => add(item.id)}>Add <Plus size={15} /></button>}</div></div></article>)}</div></section>
+      <section className="tracking-card"><div className="tracking-left"><div className="eyebrow small">Your latest order · #ORD-2847</div><h2>On its way to your table.</h2><p>We’ll let you know when every plate is ready.</p></div><div className="order-progress"><div className="progress-line"><span /></div>{['Received', 'Preparing', 'Ready', 'Served'].map((step, i) => <div className={`progress-step ${i < 2 ? 'done' : ''}`} key={step}><div className="progress-dot">{i < 2 ? <Check size={12} /> : i === 2 ? <Clock3 size={12} /> : ''}</div><span>{step}</span></div>)}</div><button className="outline-button">Track order <ArrowRight size={15} /></button></section>
+    </main> : <Admin activeNav={activeNav} setActiveNav={setActiveNav} />}
+
+    {showCart && <div className="cart-overlay" onClick={() => setShowCart(false)}><aside className="cart-drawer" onClick={e => e.stopPropagation()}><div className="drawer-header"><div><div className="eyebrow small">Your table · T12</div><h2>Your order</h2></div><button className="icon-button" onClick={() => setShowCart(false)}><X size={19} /></button></div><div className="drawer-items">{cartItems.map(item => <div className="drawer-item" key={item.id}><img src={item.image} alt="" /><div className="drawer-item-copy"><b>{item.name}</b><span>₹{item.price} · {item.time}</span><div className="quantity-control"><button onClick={() => decrease(item.id)}><Minus size={13} /></button><b>{cart[item.id]}</b><button onClick={() => add(item.id)}><Plus size={13} /></button></div></div></div>)}{!cartItems.length && <div className="empty-cart"><ShoppingBag size={28} /><p>Your table is waiting for something delicious.</p></div>}</div><div className="special-instruction"><label htmlFor="instructions">Kitchen note</label><textarea id="instructions" placeholder="Less spicy, no onions..." /></div><div className="bill"><div><span>Subtotal</span><b>₹{subtotal}</b></div><div><span>GST (5%)</span><b>₹{gst}</b></div><div className="bill-total"><span>Total to pay</span><b>₹{total}</b></div></div><button className="primary-button full" disabled={!cartItems.length} onClick={() => { setPlaced(true); setShowCart(false) }}>Review & pay <ArrowRight size={17} /></button></aside></div>}
+    {placed && <div className="success-toast"><div className="success-check"><Check size={18} /></div><div><b>Order received</b><span>#ORD-2848 · Kitchen is on it</span></div><button onClick={() => setPlaced(false)}><X size={15} /></button></div>}
+  </div>
+}
+
+function Admin({ activeNav, setActiveNav }: { activeNav: string, setActiveNav: (value: string) => void }) {
+  const nav = [{ icon: LayoutDashboard, label: 'Overview' }, { icon: ShoppingBag, label: 'Orders' }, { icon: Utensils, label: 'Kitchen' }, { icon: Menu, label: 'Menu' }, { icon: Table2, label: 'Tables' }, { icon: ReceiptText, label: 'Billing' }, { icon: BarChart3, label: 'Reports' }]
+  return <main className="admin-layout"><aside className="admin-sidebar"><div className="admin-brand"><Logo small /><span className="admin-pill">ADMIN</span></div><div className="sidebar-label">Workspace</div><nav>{nav.map(({ icon: Icon, label }) => <button key={label} className={activeNav === label ? 'active' : ''} onClick={() => setActiveNav(label)}><Icon size={17} />{label}{label === 'Orders' && <span className="nav-count">8</span>}</button>)}</nav><div className="sidebar-bottom"><button><Bell size={17} /> Notifications <span className="notification-dot" /></button><button><Settings2 size={17} /> Settings</button><div className="staff-card"><div className="avatar dark">AK</div><div><b>Anika Kapoor</b><span>Restaurant manager</span></div><MoreHorizontal size={17} /></div></div></aside><section className="admin-content"><div className="admin-header"><div><div className="eyebrow small">Saturday, 08 August 2026 <span className="live-badge"><span className="live-dot" /> Live</span></div><h1>{activeNav === 'Overview' ? 'Good evening, Anika.' : activeNav}</h1></div><div className="admin-header-actions"><button className="outline-button"><QrCode size={15} /> Scan table</button><button className="primary-button"><Plus size={16} /> New order</button></div></div>{activeNav === 'Overview' || activeNav === 'Orders' || activeNav === 'Kitchen' ? <><div className="stat-grid"><Stat icon={ShoppingBag} label="Today's orders" value="84" change="+12.5%" /><Stat icon={WalletCards} label="Today's revenue" value="₹42,860" change="+8.2%" /><Stat icon={Clock3} label="Avg. prep time" value="18m 24s" change="-4.6%" /><Stat icon={Table2} label="Active tables" value="12 / 24" change="50% occupied" /></div><div className="admin-grid"><section className="panel orders-panel"><div className="panel-heading"><div><h2>Live orders</h2><p>Keep the floor moving smoothly.</p></div><button className="text-button">View all <ArrowRight size={15} /></button></div><div className="order-table"><div className="order-table-head"><span>Order</span><span>Table & guest</span><span>Items</span><span>Total</span><span>Status</span><span /></div>{orders.map(order => <div className="order-row" key={order.id}><div><b>{order.id}</b><span className="order-age"><Clock3 size={12} /> {order.age}</span></div><div><b>{order.table}</b><span>{order.customer}</span></div><div className="order-items">{order.items}</div><b>₹{order.total}</b><StatusPill status={order.status} /><button className="more-button"><MoreHorizontal size={17} /></button></div>)}</div></section><section className="panel revenue-panel"><div className="panel-heading"><div><h2>Revenue pulse</h2><p>Last 7 service days</p></div><button className="filter-button">This week <ChevronDown size={14} /></button></div><div className="revenue-number">₹2,84,600 <span><TrendingUp size={14} /> 18.4%</span></div><div className="mini-chart"><div className="chart-grid"><i /><i /><i /><i /></div><svg viewBox="0 0 400 130" preserveAspectRatio="none"><path d="M0,102 C25,94 25,84 53,88 S85,110 112,82 S143,57 168,75 S198,98 220,64 S250,53 276,58 S300,38 325,46 S350,62 370,22 S390,28 400,10" fill="none" stroke="currentColor" strokeWidth="3" /><path d="M0,102 C25,94 25,84 53,88 S85,110 112,82 S143,57 168,75 S198,98 220,64 S250,53 276,58 S300,38 325,46 S350,62 370,22 S390,28 400,10 V130 H0Z" fill="currentColor" opacity=".08" /></svg><div className="chart-labels"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div></div></section></div><div className="admin-grid lower"><section className="panel kitchen-panel"><div className="panel-heading"><div><h2>Kitchen queue</h2><p>Orders that need attention</p></div><span className="queue-count">3 active</span></div>{orders.map((order, index) => <div className="kitchen-order" key={order.id}><div className="kitchen-order-top"><div><b>{order.id}</b><span>{order.table} · {index === 0 ? 'Dine-in' : 'Dine-in'}</span></div><span className={index === 0 ? 'timer hot' : 'timer'}><Clock3 size={13} /> {order.age}</span></div><p>{order.items}</p><div className="kitchen-actions"><StatusPill status={order.status} /><button className="small-action">{index === 0 ? 'Mark ready' : 'Open ticket'} <ArrowRight size={13} /></button></div></div>)}</section><section className="panel popular-panel"><div className="panel-heading"><div><h2>Popular dishes</h2><p>Based on orders this week</p></div><BarChart3 size={18} className="muted-icon" /></div>{menuItems.slice(0, 4).map((item, i) => <div className="popular-row" key={item.id}><span className="rank">0{i + 1}</span><img src={item.image} alt="" /><div><b>{item.name}</b><span>{[48, 42, 36, 28][i]} orders</span></div><div className="pop-bar"><span style={{ width: `${[100, 82, 70, 55][i]}%` }} /></div></div>)}</section></div></> : <div className="empty-admin"><div className="empty-icon"><Settings2 size={25} /></div><h2>{activeNav} workspace ready</h2><p>Use the navigation to manage your restaurant operations.</p></div>}</section></main>
+}
+function Stat({ icon: Icon, label, value, change }: { icon: typeof ShoppingBag, label: string, value: string, change: string }) { return <div className="stat-card"><div className="stat-icon"><Icon size={17} /></div><div className="stat-label">{label}</div><strong>{value}</strong><span className="stat-change"><TrendingUp size={12} /> {change}</span></div> }
