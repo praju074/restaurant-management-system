@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState, useEffect } from 'react'
-import { ArrowRight, BarChart3, Bell, CreditCard, LayoutDashboard, MessageSquare, PieChart, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
+import { ArrowRight, BarChart3, Bell, ChevronDown, CreditCard, LayoutDashboard, Menu as MenuIcon, MessageSquare, PieChart, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
 
 const initialMenu = [
   { id: 1, name: 'Smoked Paneer Tikka', category: 'Starters', price: 320, status: 'Available', special: true },
@@ -97,6 +97,7 @@ function MetricCard({ icon: Icon, label, value }: { icon: typeof LayoutDashboard
 
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('Orders')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [orders, setOrders] = useState(initialOrders)
   const [menu, setMenu] = useState(initialMenu)
   const [tables, setTables] = useState(initialTables)
@@ -278,6 +279,7 @@ export default function AdminPage() {
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab)
+    setMobileNavOpen(false)
     if (typeof window !== 'undefined') {
       try {
         const url = new URL(window.location.href)
@@ -310,7 +312,18 @@ export default function AdminPage() {
             <div className="brand-sub">Operations Dashboard</div>
           </div>
         </div>
-        <nav className="site-nav admin-nav admin-tabs-scroll">
+        <button
+          type="button"
+          className="admin-nav-toggle"
+          aria-expanded={mobileNavOpen}
+          aria-controls="admin-tabs-nav"
+          onClick={() => setMobileNavOpen(open => !open)}
+        >
+          {mobileNavOpen ? <X size={18} /> : <MenuIcon size={18} />}
+          <span>{activeTab}</span>
+          <ChevronDown size={16} className={`admin-nav-toggle-caret ${mobileNavOpen ? 'is-open' : ''}`} />
+        </button>
+        <nav id="admin-tabs-nav" className={`site-nav admin-nav admin-tabs-scroll ${mobileNavOpen ? 'is-open' : ''}`}>
           {tabs.map(tab => (
             <button key={tab} type="button" className={`tab-button ${activeTab === tab ? 'active-tab' : ''}`} onClick={() => handleTabChange(tab)}>
               {tab}
