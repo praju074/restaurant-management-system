@@ -1423,18 +1423,59 @@ button {
 
 @media (max-width: 760px) {
   .site-header {
-    padding: 18px 16px;
-    flex-direction: column;
-    align-items: stretch;
+    padding: 14px 18px;
+    border-radius: 24px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    position: sticky;
+    top: 10px;
+    z-index: 100;
   }
 
   .site-nav {
-    gap: 10px;
+    width: 100%;
+    order: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.04);
+    padding: 6px 12px;
+    border-radius: 16px;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+
+  .dark .site-nav {
+    background: rgba(255, 255, 255, 0.07);
+  }
+
+  .site-nav a {
+    padding: 4px 10px;
+    border-radius: 10px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .hero-actions {
+    order: 2;
+    margin: 0;
+  }
+
+  .theme-toggle {
+    padding: 6px 14px !important;
+    font-size: 0.82rem !important;
+    border-radius: 20px !important;
   }
 
   .hero {
-    padding: 40px 18px 32px;
-    gap: 24px;
+    padding: 30px 18px 24px;
+    gap: 20px;
   }
 
   .hero-media {
@@ -1678,9 +1719,187 @@ button {
     gap: 12px;
     padding: 12px 14px;
   }
+}
 
-  .login-note {
-    font-size: 0.9rem;
+/* Features Section Header & Cards */
+.features-section {
+  margin: 40px 0 20px;
+  display: grid;
+  gap: 24px;
+}
+
+.section-header {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(194, 90, 52, 0.12);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.section-title {
+  font-family: var(--font-serif);
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 700;
+  color: var(--foreground);
+  margin: 8px 0 6px;
+  line-height: 1.2;
+}
+
+.section-subtitle {
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* Mobile-friendly Admin Metrics Grid */
+.admin-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Scrollable Category & Admin Tabs with Scrollbar on TOP */
+.category-tabs,
+.admin-tabs-scroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-top: 8px;
+  padding-bottom: 4px;
+  margin-bottom: 24px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+}
+
+.category-tabs > *,
+.admin-tabs-scroll > * {
+  transform: rotateX(180deg);
+  -webkit-transform: rotateX(180deg);
+}
+
+.admin-tabs-scroll::-webkit-scrollbar,
+.category-tabs::-webkit-scrollbar {
+  height: 6px;
+}
+
+.admin-tabs-scroll::-webkit-scrollbar-thumb,
+.category-tabs::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 4px;
+}
+
+/* Cart Summary Box below Table Entry */
+.cart-inline-summary {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px 24px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+  margin-top: 16px;
+}
+
+.dark .cart-inline-summary {
+  background: rgba(22, 28, 37, 0.95);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Printable POS Receipt Styling */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable-receipt, .printable-receipt * {
+    visibility: visible;
+  }
+  .printable-receipt {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
 }
+
+/* Comprehensive Mobile Responsiveness for Every Page & Section */
+@media (max-width: 768px) {
+  .app-shell {
+    padding: 10px !important;
+  }
+
+  .site-header {
+    width: 100% !important;
+    margin: 0 auto 16px !important;
+  }
+
+  .hero-stat-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .featured-grid,
+  .menu-grid,
+  .table-grid,
+  .report-grid,
+  .feature-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .order-entry-card,
+  .cart-inline-summary,
+  .menu-card,
+  .table-card,
+  .feature-card,
+  .admin-form-panel,
+  .billing-summary-panel {
+    padding: 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .admin-panel {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  .cart-checkout-actions,
+  .hero-actions {
+    flex-direction: column !important;
+    width: 100% !important;
+    gap: 10px !important;
+  }
+
+  .primary-button,
+  .secondary-button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .menu-actions {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .search-input,
+  .menu-actions select {
+    width: 100% !important;
+  }
+}
+
+
 

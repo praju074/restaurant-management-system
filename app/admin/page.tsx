@@ -286,7 +286,7 @@ export default function AdminPage() {
             <div className="brand-sub">Operations Dashboard</div>
           </div>
         </div>
-        <nav className="site-nav admin-nav">
+        <nav className="site-nav admin-nav admin-tabs-scroll">
           {tabs.map(tab => (
             <button key={tab} className={`tab-button ${activeTab === tab ? 'active-tab' : ''}`} onClick={() => setActiveTab(tab)}>
               {tab}
@@ -313,7 +313,7 @@ export default function AdminPage() {
         </section>
 
         <section className="menu-section admin-stats" id="orders">
-          <div className="feature-grid">
+          <div className="admin-metrics-grid">
             <MetricCard icon={ShoppingBag} label="Total orders" value={`${metricValues.total}`} />
             <MetricCard icon={Bell} label="Pending" value={`${metricValues.pending}`} />
             <MetricCard icon={LayoutDashboard} label="Completed" value={`${metricValues.completed}`} />
@@ -593,41 +593,227 @@ export default function AdminPage() {
           <section className="menu-section">
             <div className="menu-header">
               <div>
-                <span className="eyebrow">Custom billing</span>
-                <h2>Build invoices with discounts, GST, and payment capture.</h2>
-                <p className="section-note">Use this billing panel to finalize guest orders, capture online settlement, and mark payments as complete.</p>
+                <span className="eyebrow">Table-Wise POS & Billing Settlement</span>
+                <h2>Auto-Generated Table Invoices & Payment Status</h2>
+                <p className="section-note">Select a table to collect its live orders, edit/add line items, check payment status (Paid vs Unpaid), and print thermal receipts.</p>
               </div>
             </div>
-            <div className="admin-panel">
-              <div className="admin-form-panel">
-                {customItems.map((item, index) => (
-                  <div key={index} className="billing-row">
-                    <input value={item.description} onChange={e => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, description: e.target.value } : row))} placeholder="Item description" />
-                    <input type="number" value={item.quantity} min={1} onChange={e => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, quantity: Number(e.target.value) } : row))} />
-                    <input type="number" value={item.price} min={0} onChange={e => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, price: Number(e.target.value) } : row))} placeholder="Price" />
-                    <button type="button" className="secondary-button danger-button" onClick={() => setCustomItems(current => current.filter((_, idx) => idx !== index))}>Remove</button>
-                  </div>
-                ))}
-                <button type="button" className="secondary-button" onClick={() => setCustomItems(current => [...current, { description: '', price: 0, quantity: 1 }])}>Add custom item</button>
-                <label>
-                  <span>Discount %</span>
-                  <input type="number" min={0} max={100} value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))} />
-                </label>
+
+            {/* Table Selection Bar */}
+            <div style={{ marginBottom: '24px' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: 700, display: 'block', marginBottom: '10px', color: 'var(--foreground)' }}>
+                Select Active Table:
+              </span>
+              <div className="category-tabs admin-tabs-scroll" style={{ padding: '8px 0' }}>
+                {tables.map(tbl => {
+                  const tableOrders = orders.filter(o => o.table === tbl.id)
+                  const isPaid = tableOrders.length > 0 && tableOrders.every(o => o.paymentStatus === 'Paid')
+                  const hasOrders = tableOrders.length > 0
+                  const isSelected = manualTable === tbl.id
+
+                  return (
+                    <button
+                      key={tbl.id}
+                      className={isSelected ? 'active' : ''}
+                      onClick={() => {
+                        setManualTable(tbl.id)
+                        if (hasOrders) {
+                          const parsed = tableOrders.flatMap(o => o.items.split(',').map(str => {
+                            const parts = str.trim().split('×')
+                            return { description: parts[0]?.trim() || 'Item', price: 280, quantity: Number(parts[1] || 1) }
+                          }))
+                          setCustomItems(parsed)
+                        } else {
+                          setCustomItems([
+                            { description: 'Smoked Paneer Tikka', price: 320, quantity: 1 },
+                            { description: 'Butter Garlic Naan', price: 110, quantity: 2 },
+                          ])
+                        }
+                      }}
+                      style={{
+                        padding: '10px 16px',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        transition: 'all 0.2s ease',
+                        border: isSelected ? '2px solid var(--primary)' : '1px solid var(--border)',
+                      }}
+                    >
+                      <span>{tbl.id}</span>
+                      <span style={{ fontSize: '0.75rem', padding: '2px 8px', borderRadius: '10px', background: hasOrders ? (isPaid ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)') : 'rgba(156,163,175,0.15)', color: hasOrders ? (isPaid ? '#166534' : '#991b1b') : '#4b5563' }}>
+                        {hasOrders ? (isPaid ? '✓ Paid' : '⚠ Unpaid') : 'Empty'}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
-              <div className="menu-list-panel billing-summary-panel">
-                <div className="feature-card">
-                  <div className="feature-icon"><CreditCard size={18} /></div>
+            </div>
+
+            <div className="admin-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
+              {/* Left Column: Live Bill Editor & Item Adder */}
+              <div className="admin-form-panel" style={{ background: 'var(--card)', borderRadius: '24px', padding: '24px', border: '1px solid var(--border)', boxShadow: '0 12px 40px rgba(0,0,0,0.06)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
                   <div>
-                    <span>Invoice preview</span>
-                    <strong>₹{billingTotal}</strong>
+                    <h3 style={{ fontSize: '1.25rem', margin: 0, fontWeight: 800 }}>Table {manualTable} Bill Controls</h3>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>Edit quantities, add dishes, or apply discounts</span>
                   </div>
                 </div>
-                <div className="billing-summary">
-                  <div><span>Subtotal</span><strong>₹{billingSubtotal}</strong></div>
-                  <div><span>GST</span><strong>₹{billingGst}</strong></div>
-                  <div><span>Service</span><strong>₹{billingService}</strong></div>
-                  <div><span>Discount</span><strong>-₹{billingDiscount}</strong></div>
-                  <div className="billing-total"><span>Total</span><strong>₹{billingTotal}</strong></div>
+
+                {/* Quick Add Menu Item Dropdown */}
+                <div style={{ background: 'var(--muted)', padding: '14px', borderRadius: '16px', marginBottom: '16px', display: 'grid', gap: '8px' }}>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>+ Add Item to Table {manualTable} Bill:</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <select
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: '10px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)' }}
+                      value={manualDish}
+                      onChange={e => setManualDish(Number(e.target.value))}
+                    >
+                      {menu.map(item => <option key={item.id} value={item.id}>{item.name} (₹{item.price})</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      className="primary-button"
+                      style={{ padding: '8px 14px', borderRadius: '10px' }}
+                      onClick={() => {
+                        const menuItem = menu.find(item => item.id === manualDish)
+                        if (menuItem) {
+                          setCustomItems(current => {
+                            const existing = current.find(row => row.description === menuItem.name)
+                            if (existing) {
+                              return current.map(row => row.description === menuItem.name ? { ...row, quantity: row.quantity + 1 } : row)
+                            }
+                            return [...current, { description: menuItem.name, price: menuItem.price, quantity: 1 }]
+                          })
+                        }
+                      }}
+                    >
+                      Add Dish
+                    </button>
+                  </div>
+                </div>
+
+                {/* Line Items List */}
+                <div style={{ display: 'grid', gap: '10px', marginBottom: '16px' }}>
+                  {customItems.length === 0 ? (
+                    <p style={{ textAlign: 'center', color: 'var(--muted-foreground)', fontStyle: 'italic', padding: '16px 0' }}>No items on bill. Select a dish above to add.</p>
+                  ) : (
+                    customItems.map((item, index) => (
+                      <div key={index} className="billing-row" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: '8px', alignItems: 'center', background: 'var(--muted)', padding: '10px 12px', borderRadius: '14px' }}>
+                        <input
+                          style={{ padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)' }}
+                          value={item.description}
+                          onChange={e => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, description: e.target.value } : row))}
+                          placeholder="Item description"
+                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <button type="button" className="secondary-button" style={{ padding: '2px 8px' }} onClick={() => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, quantity: Math.max(1, row.quantity - 1) } : row))}>-</button>
+                          <span style={{ fontWeight: 700 }}>{item.quantity}</span>
+                          <button type="button" className="secondary-button" style={{ padding: '2px 8px' }} onClick={() => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, quantity: row.quantity + 1 } : row))}>+</button>
+                        </div>
+                        <input
+                          type="number"
+                          style={{ padding: '6px 8px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)' }}
+                          value={item.price}
+                          min={0}
+                          onChange={e => setCustomItems(current => current.map((row, idx) => idx === index ? { ...row, price: Number(e.target.value) } : row))}
+                          placeholder="Price"
+                        />
+                        <button type="button" className="secondary-button danger-button" style={{ padding: '6px 10px', color: '#dc2626' }} onClick={() => setCustomItems(current => current.filter((_, idx) => idx !== index))}>✕</button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border)', paddingTop: '14px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 600 }}>
+                    <span>Discount (%)</span>
+                    <input type="number" style={{ width: '80px', padding: '6px 10px', borderRadius: '8px', border: '1px solid var(--border)', background: 'var(--card)', color: 'var(--foreground)' }} min={0} max={100} value={discountPercent} onChange={e => setDiscountPercent(Number(e.target.value))} />
+                  </label>
+                  <button type="button" className="secondary-button" onClick={() => setCustomItems(current => [...current, { description: 'Custom Extra Item', price: 150, quantity: 1 }])}>+ Custom Item</button>
+                </div>
+              </div>
+
+              {/* Right Column: Luxury POS Bill Receipt Preview & Payment Status Badge */}
+              <div className="menu-list-panel billing-summary-panel printable-receipt" style={{ background: '#ffffff', color: '#111827', borderRadius: '28px', padding: '28px', border: '1px solid #e5e7eb', boxShadow: '0 20px 60px rgba(0,0,0,0.12)', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  {/* Bill Top Header */}
+                  <div style={{ textAlign: 'center', borderBottom: '2px dashed #d1d5db', paddingBottom: '16px', marginBottom: '16px' }}>
+                    <div style={{ display: 'inline-block', background: '#c25a34', color: '#ffffff', width: '36px', height: '36px', borderRadius: '50%', lineHeight: '36px', fontWeight: 'bold', fontSize: '1.2rem', marginBottom: '6px' }}>V</div>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0, color: '#111827', letterSpacing: '0.02em' }}>VERANDA KITCHEN & BAR</h2>
+                    <p style={{ fontSize: '0.85rem', color: '#4b5563', margin: '4px 0 0', fontWeight: 600 }}>OFFICIAL INVOICE FOR TABLE {manualTable}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#6b7280', marginTop: '10px', padding: '0 8px' }}>
+                      <span>Invoice #: ORD-{Math.floor(1000 + Math.random() * 9000)}</span>
+                      <span>{new Date().toLocaleDateString()} {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                  </div>
+
+                  {/* Payment Status Stamp/Badge directly on top of Bill */}
+                  {(() => {
+                    const tableOrders = orders.filter(o => o.table === manualTable)
+                    const isPaid = tableOrders.length > 0 && tableOrders.every(o => o.paymentStatus === 'Paid')
+                    return (
+                      <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isPaid ? '#f0fdf4' : '#fffbeb', border: `1.5px solid ${isPaid ? '#bbf7d0' : '#fde68a'}`, padding: '10px 14px', borderRadius: '16px' }}>
+                        <div>
+                          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: isPaid ? '#166534' : '#92400e', fontWeight: 800, display: 'block' }}>Payment Status</span>
+                          <strong style={{ fontSize: '1.05rem', color: isPaid ? '#15803d' : '#b45309' }}>
+                            {isPaid ? '✓ PAID IN FULL' : '⚠ PAYMENT PENDING'}
+                          </strong>
+                        </div>
+                        <button
+                          type="button"
+                          className="secondary-button"
+                          style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '12px', background: isPaid ? '#166534' : '#c25a34', color: '#ffffff', border: 'none' }}
+                          onClick={() => {
+                            setOrders(current => current.map(o => o.table === manualTable ? { ...o, paymentStatus: isPaid ? 'Pending' : 'Paid' } : o))
+                          }}
+                        >
+                          Mark as {isPaid ? 'Unpaid' : 'Paid'}
+                        </button>
+                      </div>
+                    )
+                  })()}
+
+                  {/* Itemized Line Items */}
+                  <div style={{ margin: '16px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '0.82rem', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', borderBottom: '1px solid #f3f4f6', paddingBottom: '6px', marginBottom: '8px' }}>
+                      <span>Item</span>
+                      <span>Qty x Price</span>
+                      <span>Total</span>
+                    </div>
+                    {customItems.length === 0 ? (
+                      <p style={{ textAlign: 'center', color: '#9ca3af', fontStyle: 'italic', padding: '16px 0' }}>No items on invoice.</p>
+                    ) : (
+                      customItems.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', fontSize: '0.92rem', borderBottom: '1px dashed #f3f4f6' }}>
+                          <span style={{ fontWeight: 600 }}>{item.description || 'Custom Item'}</span>
+                          <span style={{ color: '#6b7280' }}>{item.quantity} × ₹{item.price}</span>
+                          <strong>₹{item.price * item.quantity}</strong>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Calculation Details */}
+                  <div style={{ borderTop: '2px dashed #e5e7eb', paddingTop: '12px', display: 'grid', gap: '6px', fontSize: '0.92rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4b5563' }}><span>Subtotal</span><span>₹{billingSubtotal}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4b5563' }}><span>GST (5%)</span><span>₹{billingGst}</span></div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', color: '#4b5563' }}><span>Service Tax (6%)</span><span>₹{billingService}</span></div>
+                    {billingDiscount > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', color: '#dc2626', fontWeight: 700 }}><span>Discount ({discountPercent}%)</span><span>-₹{billingDiscount}</span></div>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.25rem', fontWeight: 900, borderTop: '2px solid #111827', paddingTop: '10px', marginTop: '8px', color: '#111827' }}>
+                      <span>Grand Total</span>
+                      <span style={{ color: '#c25a34' }}>₹{billingTotal}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Print Button */}
+                <div style={{ marginTop: '24px' }}>
+                  <button type="button" className="primary-button" style={{ width: '100%', justifyContent: 'center', padding: '14px', fontSize: '1.05rem', fontWeight: 800, borderRadius: '16px' }} onClick={() => window.print()}>
+                    🖨 Print POS Thermal Receipt
+                  </button>
                 </div>
               </div>
             </div>

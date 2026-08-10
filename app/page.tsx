@@ -539,7 +539,15 @@ export default function Page() {
               </button>
               <a href="#cart" className="secondary-button">View cart</a>
             </div>
-            <div className="hero-stat-grid">
+            <div className="hero-features-header" style={{ marginTop: '2.5rem', marginBottom: '0.8rem' }}>
+              <span className="section-tag" style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
+                <Utensils size={13} /> Platform Capabilities
+              </span>
+              <h3 style={{ fontSize: '1.5rem', fontWeight: 800, fontFamily: 'var(--font-serif)', color: 'var(--foreground)', margin: '6px 0 0' }}>
+                Our Features
+              </h3>
+            </div>
+            <div className="hero-stat-grid" style={{ marginTop: '0.8rem' }}>
               <div>
                 <strong>QR based</strong>
                 <span>Auto-detect table number</span>
@@ -560,7 +568,7 @@ export default function Page() {
           </div>
         </section>
 
-        <section className="table-entry-section">
+        <section className="table-entry-section" id="cart">
           <div className="order-entry-card">
             <div className="order-entry-copy">
               <span className="eyebrow">Table Entry</span>
@@ -586,10 +594,116 @@ export default function Page() {
                 <span>Ask staff to refresh your table details.</span>
               </div>
             </div>
+
+            {/* Cart Section - Embedded directly below Table Entry details as pointed in screenshot */}
+            <div className="cart-inline-summary" style={{ marginTop: '24px', borderTop: '2px dashed var(--border)', paddingTop: '20px' }}>
+              <div className="reserve-copy" style={{ marginBottom: '16px' }}>
+                <span className="eyebrow">Shopping Cart & Quick Checkout</span>
+                <h3 style={{ fontSize: '1.4rem', fontWeight: 800, margin: '4px 0' }}>Order Summary {tableNumber ? `for Table ${tableNumber}` : ''}</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>Review selected items, add cooking instructions, and place your order.</p>
+              </div>
+
+              {cartEntries.length === 0 ? (
+                <div className="empty-cart" style={{ padding: '20px', textAlign: 'center', background: 'rgba(0,0,0,0.02)', borderRadius: '16px' }}>
+                  <h4 style={{ margin: '0 0 4px', fontSize: '1.1rem' }}>Your cart is empty.</h4>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--muted-foreground)' }}>Browse the menu below and tap "Add to cart" on your favorite dishes.</p>
+                </div>
+              ) : (
+                <div className="shopping-cart-card">
+                  <div className="cart-items">
+                    {cartEntries.map(item => (
+                      <div className="cart-row" key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
+                        <div>
+                          <strong>{item.name}</strong>
+                          <div style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>{item.category}</div>
+                          <div className="quantity-controls" style={{ marginTop: '6px', display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
+                            <button type="button" className="secondary-button" style={{ padding: '2px 8px' }} onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
+                            <span>{item.quantity}</span>
+                            <button type="button" className="secondary-button" style={{ padding: '2px 8px' }} onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <strong style={{ display: 'block' }}>₹{item.price * item.quantity}</strong>
+                          <button type="button" className="text-button" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '4px' }} onClick={() => removeFromCart(item.id)}>Remove</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <label style={{ display: 'grid', gap: '6px', margin: '16px 0' }}>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Cooking instructions</span>
+                    <textarea
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: '12px', border: '1px solid var(--border)', background: 'var(--input)' }}
+                      value={specialInstructions}
+                      onChange={e => setSpecialInstructions(e.target.value)}
+                      placeholder="Add any special requests (e.g. less spicy, no onions)..."
+                    />
+                  </label>
+                  <div className="billing-summary" style={{ display: 'grid', gap: '4px', margin: '16px 0', padding: '12px', background: 'rgba(0,0,0,0.02)', borderRadius: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Subtotal</span>
+                      <strong>₹{subtotal}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>GST (5%)</span>
+                      <strong>₹{gst}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Service charge (6%)</span>
+                      <strong>₹{service}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid var(--border)', fontSize: '1.1rem', marginTop: '4px' }}>
+                      <strong>Total Payable</strong>
+                      <strong style={{ color: 'var(--primary)' }}>₹{total}</strong>
+                    </div>
+                  </div>
+                  <div className="cart-checkout-actions" style={{ display: 'flex', gap: '12px', marginTop: '16px', flexWrap: 'wrap' }}>
+                    <button type="button" className="primary-button" style={{ flex: 1 }} onClick={handlePlaceOrder}>
+                      Place Table Order
+                    </button>
+                    <button type="button" className="secondary-button" style={{ flex: 1 }} onClick={handlePayOnline}>
+                      Pay Online & Order
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
-        
+        {/* Our Features Section - Prominently Headed as requested by Siddesh Sir */}
+        <section className="features-section" id="features">
+          <div className="section-header">
+            <span className="section-tag"><Utensils size={14} /> Key Highlights</span>
+            <h2 className="section-title">Our Features</h2>
+            <p className="section-subtitle">Experience seamless digital dining, instant table QR ordering, live kitchen progress, and fresh artisanal meals.</p>
+          </div>
+          <div className="featured-grid">
+            <article className="featured-card">
+              <div className="featured-ribbon">Instant QR</div>
+              <img src="/images/table-setting.png" alt="Seamless Table QR Ordering" />
+              <div className="featured-card-body">
+                <strong>Zero Wait Table Ordering</strong>
+                <p>Scan your table QR code to view the live menu, place orders directly, and modify items effortlessly.</p>
+              </div>
+            </article>
+            <article className="featured-card">
+              <div className="featured-ribbon">Live KDS</div>
+              <img src="/images/restaurant-dining.png" alt="Live Order Tracking" />
+              <div className="featured-card-body">
+                <strong>Real-Time Kitchen Sync</strong>
+                <p>Track your food progress step-by-step from chef preparation to hot table delivery.</p>
+              </div>
+            </article>
+            <article className="featured-card">
+              <div className="featured-ribbon">Artisanal</div>
+              <img src="/images/biryani.png" alt="Fresh Ingredients" />
+              <div className="featured-card-body">
+                <strong>Fresh Gourmet Crafting</strong>
+                <p>Every dish is made fresh with organic ingredients, customizable spice levels, and chef signature recipes.</p>
+              </div>
+            </article>
+          </div>
+        </section>
 
         <section className="featured-section">
           <div className="section-copy">
@@ -700,103 +814,7 @@ export default function Page() {
           </section>
         )}
 
-        <section className="reserve-section" id="cart">
-          <div className="reserve-copy">
-            <span className="eyebrow">Shopping cart</span>
-            <h2>Your order summary and payment preview.</h2>
-            <p>Manage quantities, add cooking notes, and confirm your table before checkout.</p>
-          </div>
-          <div className="reserve-card shopping-cart-card">
-            {cartEntries.length === 0 ? (
-              <div className="empty-cart">
-                <h3>Your cart is empty.</h3>
-                <p>Add items from the menu to start your order.</p>
-              </div>
-            ) : (
-              <>
-                <div className="cart-items">
-                  {cartEntries.map(item => (
-                    <div className="cart-row" key={item.id}>
-                      <div>
-                        <strong>{item.name}</strong>
-                        <span>{item.category}</span>
-                        <div className="quantity-controls">
-                          <button type="button" onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
-                          <span>{item.quantity}</span>
-                          <button type="button" onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
-                        </div>
-                      </div>
-                      <div>
-                        <strong>₹{item.price * item.quantity}</strong>
-                        <button type="button" className="text-button" onClick={() => removeFromCart(item.id)}>Remove</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <label>
-                  <span>Cooking instructions</span>
-                  <textarea value={specialInstructions} onChange={e => setSpecialInstructions(e.target.value)} placeholder="Add any special requests here..." />
-                </label>
-                <div className="billing-summary">
-                  <div>
-                    <span>Subtotal</span>
-                    <strong>₹{subtotal}</strong>
-                  </div>
-                  <div>
-                    <span>GST</span>
-                    <strong>₹{gst}</strong>
-                  </div>
-                  <div>
-                    <span>Service charge</span>
-                    <strong>₹{service}</strong>
-                  </div>
-                  <div className="billing-total">
-                    <span>Total</span>
-                    <strong>₹{total}</strong>
-                  </div>
-                </div>
-                <label>
-                  <span>Payment method</span>
-                  <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
-                    {paymentMethods.map(method => (
-                      <option key={method} value={method}>{method}</option>
-                    ))}
-                  </select>
-                </label>
-                <div className="payment-action-row">
-                  <button type="button" className="primary-button full" onClick={handlePayOnline}>Pay online</button>
-                  <button type="button" className="secondary-button full" onClick={handlePlaceOrder}>Place order</button>
-                </div>
-                {paymentMethod === 'UPI' ? (
-                  <div className="upi-section">
-                    <label>
-                      <span>UPI ID</span>
-                      <input type="text" value="veranda@upi" readOnly />
-                    </label>
-                    <div className="upi-qr-panel">
-                      <div className="upi-qr-box">
-                        <span>QR</span>
-                      </div>
-                      <div>
-                        <strong>Scan to pay</strong>
-                        <p>Use any UPI app and scan this code to send money instantly.</p>
-                        <p className="upi-id">veranda@upi</p>
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-                {onlinePaymentStatus ? <div className="payment-status-banner">{onlinePaymentStatus}</div> : null}
-                <div className="payment-note">
-                  {paymentMethod === 'UPI' ? (
-                    <><strong>UPI payment selected.</strong> Use <span className="upi-id">veranda@upi</span> or ask staff to scan the QR code.</>
-                  ) : (
-                    <><strong>{paymentMethod}</strong> will be used for checkout.</>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </section>
+
 
         {placedOrder ? (
           <section className="menu-section order-confirmation-card">
