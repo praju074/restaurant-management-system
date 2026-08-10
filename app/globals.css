@@ -1445,6 +1445,43 @@ button {
     font-size: 2.6rem;
   }
 
+  /* Make metric cards compact and mobile-friendly */
+  .hero-stat-grid {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-top: 1rem;
+  }
+
+  .hero-stat-grid div {
+    min-width: 140px;
+    flex: 0 0 auto;
+    padding: 14px 12px;
+    border-radius: 16px;
+    box-shadow: 0 12px 28px rgba(35,28,22,0.06);
+  }
+
+  .hero-stat-grid strong {
+    font-size: 1.15rem;
+  }
+
+  /* Tighter feature cards globally on small screens */
+  .feature-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .feature-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .feature-card strong {
+    font-size: 1rem;
+  }
+
   .hero-stat-grid,
   .feature-grid,
   .menu-grid,
