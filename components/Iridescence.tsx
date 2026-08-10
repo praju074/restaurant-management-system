@@ -1,6 +1,6 @@
 "use client"
 
-import { Renderer, Program, Mesh, Color, Triangle } from 'ogl'
+import { Renderer, Program, Mesh, Color, Geometry } from 'ogl'
 import { useEffect, useRef } from 'react'
 import './Iridescence.css'
 
@@ -74,7 +74,10 @@ export default function Iridescence({ color = [1, 1, 1], speed = 1.0, amplitude 
     window.addEventListener('resize', resize, false)
     resize()
 
-    const geometry = new Triangle(gl)
+    const geometry = new Geometry(gl, {
+      position: { size: 2, data: new Float32Array([-1, -1, 3, -1, -1, 3]) },
+      uv: { size: 2, data: new Float32Array([0, 0, 2, 0, 0, 2]) },
+    })
     program = new Program(gl, {
       vertex: vertexShader,
       fragment: fragmentShader,
