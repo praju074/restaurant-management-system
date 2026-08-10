@@ -276,6 +276,30 @@ export default function AdminPage() {
   const tablesAvailable = tables.filter(table => table.status === 'Available').length
   const tablesOccupied = tables.length - tablesAvailable
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab)
+    if (typeof window !== 'undefined') {
+      try {
+        const url = new URL(window.location.href)
+        url.searchParams.set('tab', tab)
+        window.history.pushState({}, '', url.toString())
+      } catch (e) {
+        // ignore history error
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+  }
+
+  // Load active tab from URL search query if provided
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    const tabParam = params.get('tab')
+    if (tabParam && tabs.includes(tabParam)) {
+      setActiveTab(tabParam)
+    }
+  }, [])
+
   return (
     <div className="app-shell restaurant-page admin-shell">
       <header className="site-header admin-header">
@@ -288,7 +312,7 @@ export default function AdminPage() {
         </div>
         <nav className="site-nav admin-nav admin-tabs-scroll">
           {tabs.map(tab => (
-            <button key={tab} className={`tab-button ${activeTab === tab ? 'active-tab' : ''}`} onClick={() => setActiveTab(tab)}>
+            <button key={tab} type="button" className={`tab-button ${activeTab === tab ? 'active-tab' : ''}`} onClick={() => handleTabChange(tab)}>
               {tab}
             </button>
           ))}
@@ -297,29 +321,33 @@ export default function AdminPage() {
       </header>
 
       <main>
-        <section className="hero admin-hero">
-          <div className="hero-copy">
-            <span className="eyebrow">Restaurant operations</span>
-            <h1>Manage live orders, kitchen flow, tables, and billing from one place.</h1>
-            <p>Accept new orders, update prep time, generate invoices, and track restaurant performance with a single dashboard.</p>
-            <div className="hero-actions">
-              <a href="#orders" className="primary-button">Go to orders</a>
-              <a href="#reports" className="secondary-button">See reports</a>
-            </div>
-          </div>
-          <div className="hero-media admin-hero-media">
-            <img src="/images/table-setting.png" alt="Admin operations" />
-          </div>
-        </section>
+        {activeTab === 'Orders' && (
+          <>
+            <section className="hero admin-hero">
+              <div className="hero-copy">
+                <span className="eyebrow">Restaurant operations</span>
+                <h1>Manage live orders, kitchen flow, tables, and billing from one place.</h1>
+                <p>Accept new orders, update prep time, generate invoices, and track restaurant performance with a single dashboard.</p>
+                <div className="hero-actions">
+                  <button type="button" className="primary-button" onClick={() => handleTabChange('Billing')}>Go to billing</button>
+                  <button type="button" className="secondary-button" onClick={() => handleTabChange('Reports')}>See reports</button>
+                </div>
+              </div>
+              <div className="hero-media admin-hero-media">
+                <img src="/images/table-setting.png" alt="Admin operations" />
+              </div>
+            </section>
 
-        <section className="menu-section admin-stats" id="orders">
-          <div className="admin-metrics-grid">
-            <MetricCard icon={ShoppingBag} label="Total orders" value={`${metricValues.total}`} />
-            <MetricCard icon={Bell} label="Pending" value={`${metricValues.pending}`} />
-            <MetricCard icon={LayoutDashboard} label="Completed" value={`${metricValues.completed}`} />
-            <MetricCard icon={CreditCard} label="Revenue" value={`₹${metricValues.revenue}`} />
-          </div>
-        </section>
+            <section className="menu-section admin-stats" id="orders">
+              <div className="admin-metrics-grid">
+                <MetricCard icon={ShoppingBag} label="Total orders" value={`${metricValues.total}`} />
+                <MetricCard icon={Bell} label="Pending" value={`${metricValues.pending}`} />
+                <MetricCard icon={LayoutDashboard} label="Completed" value={`${metricValues.completed}`} />
+                <MetricCard icon={CreditCard} label="Revenue" value={`₹${metricValues.revenue}`} />
+              </div>
+            </section>
+          </>
+        )}
 
         {activeTab === 'Orders' && (
           <section className="menu-section">
