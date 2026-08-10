@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "next lint"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
@@ -14,8 +14,8 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.16.0",
-    "ogl": "^0.0.29",
     "next": "16.3.0",
+    "ogl": "^0.0.29",
     "react": "^19",
     "react-dom": "^19",
     "shadcn": "^4.8.0",
@@ -30,10 +30,5 @@
     "postcss": "^8.5",
     "tailwindcss": "^4.3.3",
     "typescript": "5.7.3"
-  },
-  "pnpm": {
-    "overrides": {
-      "hono": "4.12.25"
-    }
   }
 }
