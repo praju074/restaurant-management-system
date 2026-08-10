@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Clock3, Heart, MapPin, Moon, Phone, Star, Sun, Utensils } from 'lucide-react'
+import { ArrowRight, ChevronUp, Clock3, Heart, MapPin, Moon, Phone, Star, Sun, Utensils } from 'lucide-react'
 
 const menuItems = [
   {
@@ -311,6 +311,7 @@ export default function Page() {
   const [recentOrders, setRecentOrders] = useState<Array<{ orderId: string; table: string; total: number; status: string }>>([])
   const [onlinePaymentStatus, setOnlinePaymentStatus] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(true)
+  const [floatingCartOpen, setFloatingCartOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -509,6 +510,17 @@ export default function Page() {
   }
 
   const activeOrderStatus = placedOrder ? orderTimeline[placedOrder.statusIndex] : null
+  const cartItemCount = cart.reduce((sum, entry) => sum + entry.quantity, 0)
+
+  const payFromFloatingCart = () => {
+    handlePayOnline()
+    setFloatingCartOpen(false)
+  }
+
+  const placeFromFloatingCart = () => {
+    handlePlaceOrder()
+    setFloatingCartOpen(false)
+  }
 
   return (
     <div className="app-shell restaurant-page">
@@ -955,6 +967,62 @@ export default function Page() {
           <a href="/admin" className="secondary-button footer-admin-link">Admin dashboard</a>
         </div>
       </footer>
+
+      {cartEntries.length > 0 && !placedOrder ? (
+        <div className="floating-cart-wrap">
+          {floatingCartOpen ? (
+            <div className="floating-cart-panel">
+              <div className="floating-cart-panel-header">
+                <strong>Your order</strong>
+                <button type="button" className="text-button" onClick={() => setFloatingCartOpen(false)}>Close</button>
+              </div>
+              <div className="floating-cart-panel-items">
+                {cartEntries.map(item => (
+                  <div className="floating-cart-panel-row" key={item.id}>
+                    <span>{item.name} × {item.quantity}</span>
+                    <strong>₹{item.price * item.quantity}</strong>
+                  </div>
+                ))}
+              </div>
+              <div className="floating-cart-panel-total">
+                <span>Total payable</span>
+                <strong>₹{total}</strong>
+              </div>
+              <label className="floating-cart-payment-select">
+                <span>Pay using</span>
+                <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                  {paymentMethods.map(method => (
+                    <option key={method} value={method}>{method}</option>
+                  ))}
+                </select>
+              </label>
+              <div className="floating-cart-panel-actions">
+                <button type="button" className="secondary-button" onClick={placeFromFloatingCart}>
+                  Place order
+                </button>
+                <button type="button" className="primary-button floating-cart-proceed" onClick={payFromFloatingCart}>
+                  Pay & place order <ArrowRight size={16} />
+                </button>
+              </div>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            className="floating-cart-bar"
+            onClick={() => setFloatingCartOpen(open => !open)}
+            aria-expanded={floatingCartOpen}
+          >
+            <span className="floating-cart-info">
+              <span className="floating-cart-count">{cartItemCount} item{cartItemCount > 1 ? 's' : ''} added</span>
+              <span className="floating-cart-total">₹{total}</span>
+            </span>
+            <span className="floating-cart-toggle">
+              View order
+              <ChevronUp size={18} className={`floating-cart-chevron ${floatingCartOpen ? 'is-open' : ''}`} />
+            </span>
+          </button>
+        </div>
+      ) : null}
     </div>
   )
 }
