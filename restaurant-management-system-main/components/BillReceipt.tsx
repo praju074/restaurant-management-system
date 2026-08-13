@@ -36,6 +36,11 @@ export default function BillReceipt({
 
       <div className="receipt-info-grid">
         <div>
+          <span>Customer</span>
+          <strong>{bill.customerName || 'Walk-in guest'}</strong>
+        </div>
+
+        <div>
           <span>Bill ID</span>
           <strong>{bill.billId}</strong>
         </div>
@@ -150,14 +155,12 @@ export default function BillReceipt({
           </strong>
         </div>
 
-        {bill.discount > 0 ? (
-          <div className="receipt-discount">
+        <div className={bill.discount > 0 ? 'receipt-discount' : ''}>
             <span>Discount</span>
             <strong>
               -₹{bill.discount.toLocaleString('en-IN')}
             </strong>
-          </div>
-        ) : null}
+        </div>
 
         <div className="receipt-grand-total">
           <span>Grand Total</span>

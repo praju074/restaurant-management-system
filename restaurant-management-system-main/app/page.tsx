@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { ArrowRight, ChevronUp, Clock3, Heart, MapPin, Moon, Phone, Star, Sun, Utensils } from 'lucide-react'
+import DemoUpiPayment from '@/components/DemoUpiPayment'
+import { billToStoredOrder, createBillFromLineItems, createLineItem, generateOrderId, persistOrderAndBill, type Bill } from '@/lib/billing'
 
 const menuItems = [
   {
@@ -303,6 +305,7 @@ export default function Page() {
   const [sortBy, setSortBy] = useState('Popularity')
   const [theme, setTheme] = useState<'light' | 'dark'>('light')
   const [tableNumber, setTableNumber] = useState('')
+  const [customerName, setCustomerName] = useState('')
   const [cart, setCart] = useState(Array<{ id: number; quantity: number; instructions: string }>())
   const [favorites, setFavorites] = useState<number[]>([])
   const [specialInstructions, setSpecialInstructions] = useState('')
@@ -312,6 +315,7 @@ export default function Page() {
   const [onlinePaymentStatus, setOnlinePaymentStatus] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(true)
   const [floatingCartOpen, setFloatingCartOpen] = useState(false)
+  const [paymentBill, setPaymentBill] = useState<Bill | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -443,7 +447,7 @@ export default function Page() {
       return
     }
 
-    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
+    const orderId = generateOrderId()
     setPlacedOrder({
       orderId,
       statusIndex: 0,
@@ -456,16 +460,18 @@ export default function Page() {
     setSpecialInstructions('')
     setOnlinePaymentStatus(null)
     setShowMenu(false)
-    // persist a lightweight order record so admin/kitchen views can pick it up
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('veranda_orders') || '[]')
-        stored.unshift({ id: orderId, table: tableNumber, total, status: 'Order received', paymentMethod, paymentStatus: 'Pending', prepTime: `${15 + cartEntries.length * 2} min` })
-        window.localStorage.setItem('veranda_orders', JSON.stringify(stored.slice(0, 50)))
-      } catch (e) {
-        // ignore
-      }
-    }
+    // Store each dish and its price so the admin invoice can reproduce this bill.
+    const bill = createBillFromLineItems({
+      orderId,
+      tableNumber,
+      customerName: customerName.trim() || 'Walk-in guest',
+      items: cartEntries.map(item => createLineItem(item.id, item.name, item.quantity, item.price)),
+      paymentMethod,
+      paidOnline: false,
+      source: 'customer',
+      instructions: specialInstructions,
+    })
+    persistOrderAndBill(billToStoredOrder(bill, 'Order received'), bill)
   }
 
   const handlePayOnline = () => {
@@ -478,35 +484,37 @@ export default function Page() {
       return
     }
 
-    const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
-    setPlacedOrder({
+    const orderId = generateOrderId()
+    const bill = createBillFromLineItems({
       orderId,
-      statusIndex: 0,
-      eta: `${12 + cartEntries.length * 2} min`,
-      total,
-      paymentMethod,
+      tableNumber,
+      customerName: customerName.trim() || 'Walk-in guest',
+      items: cartEntries.map(item => createLineItem(item.id, item.name, item.quantity, item.price)),
+      paymentMethod: 'UPI',
+      paidOnline: false,
+      source: 'customer',
+      instructions: specialInstructions,
     })
-    setRecentOrders(current => [{ orderId, table: tableNumber, total, status: 'Paid online' }, ...current].slice(0, 4))
-    setCart([])
-    setSpecialInstructions('')
-    setOnlinePaymentStatus(`Online payment completed with ${paymentMethod}.`)
-    setShowMenu(false)
-    // persist order with payment status so admin/kitchen can see it
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = JSON.parse(window.localStorage.getItem('veranda_orders') || '[]')
-        stored.unshift({ id: orderId, table: tableNumber, total, status: 'Order received', paymentMethod, paymentStatus: 'Paid', prepTime: `${12 + cartEntries.length * 2} min` })
-        window.localStorage.setItem('veranda_orders', JSON.stringify(stored.slice(0, 50)))
-      } catch (e) {
-        // ignore
-      }
-    }
+    setPaymentBill(bill)
   }
 
-  const printReceipt = () => {
-    if (typeof window !== 'undefined') {
-      window.print()
-    }
+  const completeDemoPayment = (paidBill: Bill) => {
+    const order = billToStoredOrder(paidBill, 'Order received')
+    persistOrderAndBill(order, paidBill)
+    setPlacedOrder({
+      orderId: paidBill.orderId,
+      statusIndex: 0,
+      eta: `${12 + paidBill.items.length * 2} min`,
+      total: paidBill.grandTotal,
+      paymentMethod: paidBill.paymentMethod,
+    })
+    setRecentOrders(current => [{ orderId: paidBill.orderId, table: paidBill.tableNumber, total: paidBill.grandTotal, status: 'Paid online' }, ...current].slice(0, 4))
+    setCart([])
+    setSpecialInstructions('')
+    setOnlinePaymentStatus('Demo UPI payment completed successfully.')
+    setShowMenu(false)
+    setFloatingCartOpen(false)
+    setPaymentBill(paidBill)
   }
 
   const activeOrderStatus = placedOrder ? orderTimeline[placedOrder.statusIndex] : null
@@ -588,10 +596,14 @@ export default function Page() {
               <p>You can also correct the table number manually before placing your order.</p>
             </div>
             <div className="order-entry-form">
-              <label>
-                <span>Table Number</span>
-                <input value={tableNumber} onChange={e => setTableNumber(e.target.value.toUpperCase())} placeholder="T01" />
-              </label>
+               <label>
+                 <span>Table Number</span>
+                 <input value={tableNumber} onChange={e => setTableNumber(e.target.value.toUpperCase())} placeholder="T01" />
+               </label>
+               <label>
+                 <span>Customer Name</span>
+                 <input value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Enter your name" />
+               </label>
               <button type="button" className="primary-button" onClick={() => setShowMenu(true)}>
                 Confirm table
               </button>
@@ -835,7 +847,6 @@ export default function Page() {
                 <span className="eyebrow">Order confirmed</span>
                 <h2>Your meal is on its way.</h2>
               </div>
-              <button type="button" className="secondary-button" onClick={printReceipt}>Print receipt</button>
             </div>
             <div className="feature-grid">
               <div className="feature-card">
@@ -866,66 +877,6 @@ export default function Page() {
                   <div className="step-dot" />
                 </div>
               ))}
-            </div>
-            <div className="receipt-print">
-              <div className="receipt-card">
-                <h2>Veranda Kitchen & Bar</h2>
-                <p>Order receipt</p>
-                <div className="receipt-row">
-                  <div>
-                    <span>Order ID</span>
-                    <strong>{placedOrder.orderId}</strong>
-                  </div>
-                  <div>
-                    <span>Date</span>
-                    <strong>{new Date().toLocaleString()}</strong>
-                  </div>
-                </div>
-                <div className="receipt-row">
-                  <div>
-                    <span>Table</span>
-                    <strong>{tableNumber}</strong>
-                  </div>
-                  <div>
-                    <span>Payment</span>
-                    <strong>{placedOrder.paymentMethod}</strong>
-                  </div>
-                </div>
-                <div className="receipt-table">
-                  <div className="receipt-row header">
-                    <span>Item</span>
-                    <span>Qty</span>
-                    <span>Price</span>
-                  </div>
-                  {cartEntries.map(item => (
-                    <div key={item.id} className="receipt-row">
-                      <span>{item.name}</span>
-                      <span>{item.quantity}</span>
-                      <span>₹{item.price * item.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="receipt-row">
-                    <span>Subtotal</span>
-                    <span />
-                    <span>₹{subtotal}</span>
-                  </div>
-                  <div className="receipt-row">
-                    <span>GST</span>
-                    <span />
-                    <span>₹{gst}</span>
-                  </div>
-                  <div className="receipt-row">
-                    <span>Service</span>
-                    <span />
-                    <span>₹{service}</span>
-                  </div>
-                  <div className="receipt-row total">
-                    <span>Grand total</span>
-                    <span />
-                    <span>₹{total}</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </section>
         ) : null}
@@ -1031,6 +982,7 @@ export default function Page() {
           </button>
         </div>
       ) : null}
+      {paymentBill ? <DemoUpiPayment bill={paymentBill} onPaymentComplete={completeDemoPayment} onClose={() => setPaymentBill(null)} /> : null}
     </div>
   )
 }

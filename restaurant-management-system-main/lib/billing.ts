@@ -13,6 +13,7 @@ export type Bill = {
   billId: string
   orderId: string
   tableNumber: string
+  customerName?: string
   createdAt: string
   items: BillLineItem[]
   subtotal: number
@@ -133,6 +134,7 @@ export function isOnlinePaymentMethod(method: string) {
 export function createBillFromLineItems(input: {
   orderId: string
   tableNumber: string
+  customerName?: string
   items: BillLineItem[]
   paymentMethod: string
   paidOnline?: boolean
@@ -154,6 +156,7 @@ export function createBillFromLineItems(input: {
     billId: generateBillId(),
     orderId: input.orderId,
     tableNumber: input.tableNumber,
+    customerName: input.customerName,
     createdAt: new Date().toISOString(),
     items: input.items,
 
@@ -186,9 +189,10 @@ export function billToStoredOrder(
     table: bill.tableNumber,
 
     customer:
-      bill.source === 'manual'
+      bill.customerName ??
+      (bill.source === 'manual'
         ? 'Manual entry'
-        : 'Walk-in guest',
+        : 'Walk-in guest'),
 
     type: 'Walk-in',
 
@@ -400,6 +404,8 @@ export function orderToBill(
     orderId: order.id,
 
     tableNumber: order.table,
+
+    customerName: order.customer,
 
     createdAt: new Date().toISOString(),
 

@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { ArrowRight, BarChart3, Bell, ChevronDown, CreditCard, LayoutDashboard, Menu as MenuIcon, MessageSquare, PieChart, Plus, RefreshCcw, ShoppingBag, Table2, Truck, Utensils, X } from 'lucide-react'
+import { normalizeStoredOrder, type StoredOrder } from '@/lib/billing'
 
 const initialMenu = [
   { id: 1, name: 'Smoked Paneer Tikka', category: 'Starters', price: 320, status: 'Available', special: true },
@@ -98,7 +99,7 @@ function MetricCard({ icon: Icon, label, value }: { icon: typeof LayoutDashboard
 export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('Orders')
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState<StoredOrder[]>(initialOrders)
   const [menu, setMenu] = useState(initialMenu)
   const [tables, setTables] = useState(initialTables)
   const [feedback, setFeedback] = useState(initialFeedback)
@@ -159,7 +160,7 @@ export default function AdminPage() {
       .map(([name, count]) => `${name} (${count})`)
   }, [orders])
 
-  const updateOrder = (id: string, patch: Partial<typeof initialOrders[number]>) => {
+  const updateOrder = (id: string, patch: Partial<StoredOrder>) => {
     setOrders(current => current.map(order => order.id === id ? { ...order, ...patch } : order))
   }
 
@@ -171,7 +172,7 @@ export default function AdminPage() {
       try {
         const parsed = JSON.parse(stored)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          setOrders(parsed)
+          setOrders(parsed.map((order: Record<string, unknown>) => normalizeStoredOrder(order)))
         }
       } catch (e) {
         // ignore parse errors
@@ -245,6 +246,20 @@ export default function AdminPage() {
     }).join(', ')
     if (!items || !manualTable) return
     const orderId = `ORD-${Math.floor(1000 + Math.random() * 9000)}`
+    const lineItems = manualLineItems.map(entry => {
+      const menuItem = menu.find(item => item.id === entry.id)
+      const unitPrice = menuItem?.price ?? 0
+      return {
+        id: entry.id,
+        name: menuItem?.name ?? 'Item',
+        quantity: entry.quantity,
+        unitPrice,
+        lineTotal: unitPrice * entry.quantity,
+      }
+    })
+    const subtotal = lineItems.reduce((sum, item) => sum + item.lineTotal, 0)
+    const gst = Math.round(subtotal * 0.05)
+    const service = Math.round(subtotal * 0.06)
     setOrders(current => [
       ...current,
       {
@@ -253,14 +268,15 @@ export default function AdminPage() {
         type: 'Walk-in',
         table: manualTable,
         items,
+        lineItems,
         status: 'Received',
         paymentMethod: 'On-site',
         paymentStatus: 'Pending',
         transactionId: `TXN-${Math.floor(1000 + Math.random() * 9000)}`,
-        subtotal: 0,
-        gst: 0,
-        service: 0,
-        total: 0,
+        subtotal,
+        gst,
+        service,
+        total: subtotal + gst + service,
         instructions: 'Admin entry',
         prepTime: 'TBD',
       },
@@ -268,7 +284,19 @@ export default function AdminPage() {
     setManualLineItems([])
   }
 
-  const billingSubtotal = customItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
+  const manualLineItemsWithDetails = useMemo(() => {
+    return manualLineItems.map(entry => {
+      const menuItem = menu.find(item => item.id === entry.id);
+      return { ...menuItem, ...entry, lineTotal: (menuItem?.price ?? 0) * entry.quantity };
+    });
+  }, [manualLineItems, menu]);
+
+  const billingSubtotal = useMemo(() => {
+    const fromManual = manualLineItemsWithDetails.reduce((sum, item) => sum + item.lineTotal, 0);
+    const fromCustom = customItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    return activeTab === 'Manual entry' ? fromManual : fromCustom;
+  }, [customItems, manualLineItemsWithDetails, activeTab]);
+
   const billingGst = Math.round(billingSubtotal * 0.05)
   const billingService = Math.round(billingSubtotal * 0.06)
   const billingDiscount = Math.round((discountPercent / 100) * billingSubtotal)
@@ -659,16 +687,16 @@ export default function AdminPage() {
                       onClick={() => {
                         setManualTable(tbl.id)
                         if (hasOrders) {
-                          const parsed = tableOrders.flatMap(o => o.items.split(',').map(str => {
-                            const parts = str.trim().split('×')
-                            return { description: parts[0]?.trim() || 'Item', price: 280, quantity: Number(parts[1] || 1) }
-                          }))
+                          const parsed = tableOrders.flatMap(order =>
+                            (order.lineItems ?? []).map(item => ({
+                              description: item.name,
+                              price: item.unitPrice,
+                              quantity: item.quantity,
+                            })),
+                          )
                           setCustomItems(parsed)
                         } else {
-                          setCustomItems([
-                            { description: 'Smoked Paneer Tikka', price: 320, quantity: 1 },
-                            { description: 'Butter Garlic Naan', price: 110, quantity: 2 },
-                          ])
+                          setCustomItems([])
                         }
                       }}
                       style={{
@@ -847,6 +875,12 @@ export default function AdminPage() {
                       <span>Grand Total</span>
                       <span style={{ color: '#c25a34' }}>₹{billingTotal}</span>
                     </div>
+                  </div>
+
+                  {/* Dummy UPI QR Code Section */}
+                  <div style={{ textAlign: 'center', marginTop: '20px', borderTop: '2px dashed #d1d5db', paddingTop: '16px' }}>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600, color: '#374151', margin: '0 0 8px' }}>Scan to Pay via UPI</p>
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=upi://pay?pa=veranda@example&pn=Veranda%20Kitchen&am=${billingTotal}&cu=INR" alt="UPI QR Code" style={{ margin: '0 auto', borderRadius: '12px', border: '1px solid #e5e7eb' }} />
                   </div>
                 </div>
 
