@@ -625,7 +625,7 @@ export default function Page() {
                   <div className="cart-items">
                     {cartEntries.map(item => (
                       <div className="cart-row" key={item.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--border)' }}>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <strong>{item.name}</strong>
                           <div style={{ fontSize: '0.85rem', color: 'var(--muted-foreground)' }}>{item.category}</div>
                           <div className="quantity-controls" style={{ marginTop: '6px', display: 'inline-flex', gap: '8px', alignItems: 'center' }}>
@@ -636,7 +636,7 @@ export default function Page() {
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <strong style={{ display: 'block' }}>₹{item.price * item.quantity}</strong>
-                          <button type="button" className="text-button" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '4px' }} onClick={() => removeFromCart(item.id)}>Remove</button>
+                          <button type="button" className="text-button" style={{ fontSize: '0.8rem', color: '#dc2626', marginTop: '4px' }} onClick={() => removeFromCart(item.id)}>✕ Remove</button>
                         </div>
                       </div>
                     ))}
@@ -986,7 +986,7 @@ export default function Page() {
                       <button type="button" className="secondary-button" style={{ padding: '2px 8px' }} onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
                     </div>
                     <button type="button" className="text-button" style={{ color: '#dc2626', fontSize: '0.9rem', padding: '2px 4px', marginLeft: '8px' }} onClick={() => removeFromCart(item.id)}>
-                      ✕
+                      ✕ Remove
                     </button>
                     <strong style={{ minWidth: '60px', textAlign: 'right' }}>₹{item.price * item.quantity}</strong>
                   </div>
