@@ -1,0 +1,4 @@
+[build]
+  base = "restaurant-management-system-main"
+  command = "npm run build"
+  publish = ".next"
