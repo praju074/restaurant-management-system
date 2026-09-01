@@ -324,6 +324,77 @@ export default function AdminPage() {
   const socketRef = useRef<Socket | null>(null)
 
   /* ------------------------------------------------------------------------ */
+  /* NOTIFICATION SOUND                                                       */
+  /* ------------------------------------------------------------------------ */
+
+  const notificationAudioRef = useRef<HTMLAudioElement | null>(null)
+  const notificationSoundUnlockedRef = useRef(false)
+
+  const unlockNotificationSound = async () => {
+    if (typeof window === 'undefined') return
+
+    try {
+      if (!notificationAudioRef.current) {
+        notificationAudioRef.current = new Audio(
+          '/sounds/mixkit-positive-notification-951.mp3',
+        )
+        notificationAudioRef.current.preload = 'auto'
+        notificationAudioRef.current.volume = 0
+      }
+
+      const audio = notificationAudioRef.current
+      audio.currentTime = 0
+      audio.volume = 0
+
+      await audio.play()
+      audio.pause()
+      audio.currentTime = 0
+      audio.volume = 1
+
+      notificationSoundUnlockedRef.current = true
+      console.log('[Notification Sound] Audio unlocked successfully')
+    } catch (error) {
+      console.warn('[Notification Sound] Could not unlock audio:', error)
+    }
+  }
+
+  const playNotificationSound = () => {
+    if (typeof window === 'undefined') return
+
+    try {
+      if (!notificationAudioRef.current) {
+        notificationAudioRef.current = new Audio(
+          '/sounds/mixkit-positive-notification-951.mp3',
+        )
+        notificationAudioRef.current.preload = 'auto'
+      }
+
+      const audio = notificationAudioRef.current
+      audio.pause()
+      audio.currentTime = 0
+      audio.volume = 1
+
+      const playPromise = audio.play()
+
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            notificationSoundUnlockedRef.current = true
+            console.log('[Notification Sound] 🔔 Ringing')
+          })
+          .catch(error => {
+            console.warn(
+              '[Notification Sound] Browser blocked sound. Click Enable Notifications once:',
+              error,
+            )
+          })
+      }
+    } catch (error) {
+      console.error('[Notification Sound] Failed:', error)
+    }
+  }
+
+  /* ------------------------------------------------------------------------ */
   /* FILTERED ORDERS                                                          */
   /* ------------------------------------------------------------------------ */
 
@@ -781,6 +852,12 @@ export default function AdminPage() {
         return
       }
 
+      /*
+       * This button is a real user gesture, so use it to unlock the
+       * notification audio for later incoming orders.
+       */
+      await unlockNotificationSound()
+
       if (!('Notification' in window)) {
         setNotificationPermission(
           'unsupported',
@@ -1096,26 +1173,9 @@ export default function AdminPage() {
           )
 
           /*
-           * Small sound for admin.
+           * 🔔 PLAY RINGING SOUND FOR NEW ORDER
            */
-          try {
-            const audio =
-              new Audio(
-                '/notification.mp3',
-              )
-
-            audio.volume = 0.8
-
-            audio
-              .play()
-              .catch(() => {
-                console.log(
-                  '[Notification] Browser blocked autoplay sound',
-                )
-              })
-          } catch {
-            // Ignore audio errors.
-          }
+          playNotificationSound()
         } catch (error) {
           console.error(
             '[Socket.IO] Could not process order:',
@@ -1195,6 +1255,9 @@ export default function AdminPage() {
           showBrowserNotification(
             incoming,
           )
+
+          /* 🔔 Also ring for legacy new-order event. */
+          playNotificationSound()
         } catch (error) {
           console.error(
             '[Socket.IO] Legacy order processing error:',
@@ -2183,7 +2246,7 @@ export default function AdminPage() {
           }}
         >
 
-          {/* Notification permission */}
+          {/* Notification permission + sound unlock */}
           <button
             type="button"
             className="secondary-button"
