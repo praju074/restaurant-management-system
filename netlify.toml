@@ -1,0 +1,7 @@
+[build]
+  base = "restaurant-management-system-main"
+  command = "npm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
